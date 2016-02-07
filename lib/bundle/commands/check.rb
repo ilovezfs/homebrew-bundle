@@ -30,6 +30,13 @@ module Bundle::Commands
     def self.any_formulae_to_install?
       @dsl ||= Bundle::Dsl.new(Bundle.brewfile)
       requested_formulae = @dsl.entries.select { |e| e.type == :brew }.map(&:name)
+      needs = []
+      requested_formulae.each do |f|
+	if !Bundle::BrewInstaller.formula_installed_and_up_to_date?(f)
+          needs << @dsl.entries.select { |e| e.name == f }.map { |e| args = e.options[:args] ; args.nil? ? e.name : e.name + " " + "--" + args.join(" --") }
+	end
+      end
+      puts needs.flatten.join("\n")
       requested_formulae.any? do |f|
         !Bundle::BrewInstaller.formula_installed_and_up_to_date?(f)
       end
